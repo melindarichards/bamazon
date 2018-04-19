@@ -2,7 +2,6 @@ var mysql = require("mysql");
 var inquirer = require("inquirer");
 
 // create connection info for sql database
-
 var connection = mysql.createConnection({
 	host: "localhost",
 	port: 3306,
@@ -12,74 +11,114 @@ var connection = mysql.createConnection({
 })
 
 // connect to the mysql server and sql database
-
 connection.connect(function(err){
 	console.log("Connected as id: "+connection.threadId);
 	if (err) throw err;
 
 // run the start function after the connection is made to prompt the user
-
 	start();
 })
 
-function placeOrder() {
+// create a function for the user to place an order
+function start() {
 
 	// show all info about all products in database
-
-	connection.query("SELECT * FROM 
-
-	// name of database? or name of table in database?
-
-	", function(err, results) {
+	connection.query("SELECT * FROM products", function(err, res) {
 		if (err) throw err;
+	
+		console.log(res);
 		
 // prompt user to input the id of the product s/he wishes to order
-	
-inquirer
-	.prompt(
+inquirer.prompt(
 		[
 		{
 			name: "id",
-			type: "list",
+			type: "input",
 			message: "What is the ID of the product you wish to order?",
-			// How to make sure the customer enters one of the valid ten ID numbers? How do I know what those numbers will be so I can enter them into the "choices" field?
-			choices: ["choice1", "choice2", "choice3"]
 			}
 
 // prompt user to input the amount of the product s/he wishes to order
-
-		{
+		,{
 			name: "amount",
 			type: "input",
 			message: "How many of this item do you wish to order?",
-	// make sure the customer enters a number
+
+// use a validation method to make sure the customer enters a number
 			validate: function(value) {
 				if (isNaN(value) === false) {
 					return true;
 				}
 				return false;
 				}
+
+				
 			}
 		]
 		)
+	});
+
+};
+
+// .then(function(userResponse) {
+
+
+
+
+
+// }
+
+
+// create a function to see if we have enough of the stock to meet the request
+		function checkStock() {
+
+		connection.query("SELECT stock_quantity FROM products WHERE id = " + itemID, function(err, results) {
+				if (err) throw err; 
 		
-		// Check if your store has enough of the product to meet the customer's request. If not, console.log "insufficient quality" and stop order from going through.
+// create a variable to store the ID of the item selected by the user
+// create a variable to store the amount requested by the user 
+// create a variable to store the amount of the product currently in stock
+				var itemID;
+				var userAmount;
+				var stockAmount;
+				// ********* how do I define these variables?
+				// ************* do I need to use parseInt?
+
+// If userAmount is less that stockAmount, subtract the former from the latter and create a new variable to store the result
+var newAmount; 
+var newAmount = stockAmount - userAmount;
 
 
-		// If there is enough of the product, update SQL database to reflect new quantity. 
+// do the math to see if the user amount is greater than the amount in stock
+				if (userAmount > stockAmount) {
+					console.log("Insufficient quantity!")
+				}
 
-		// Confirm customer order and show total cost of order.
+				else {
+// update the database with the new amount of stock on hand
+				connection.query("UPDATE products SET stock_quantity = " + newAmount + "WHERE id = " + itemID);
 
-		.then(function(confirm) {
-          if (err) throw err;
-					console.log("Your order was placed successfully.");
-					
-					// Show total cost of order!
-					
-					// re-prompt the customer to place another order
+// query the database to find the price of the item selected by the user
+				connection.query("SELECT price FROM products WHERE id = " + itemID, 
+					function(err, results) {
+					if (err) throw err; 
+					console.log(results);
 
+// create a variable to store the unit price
+					var itemPrice;
+					// ******************* how do I define this variable?
+
+// create a variable to store the total cost (the unit price multiplied by the number of units requested)
+					var totalCost;
+					var totalCost = itemPrice * userAmount;
+					console.log("The total cost of your order is " + totalCost + ".");
+					// run the start function to re-prompt the customer to place another order
           start();
-        }
-      );
+					}	
+				);
+		}
+// Show total cost of order.
+
+
+
     });
 }
